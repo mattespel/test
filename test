@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matematikspel - Tiotalsövergångar</title>
+    <style>
+        :root {
+            --primary: #2196F3;
+            --secondary: #FF9800;
+            --success: #4CAF50;
+            --danger: #f44336;
+            --bg: #f0f4f8;
+            --card-bg: #ffffff;
+            --text: #333;
+            --dot-base: #2196F3;
+            --dot-action: #FF9800;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .game-container {
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            max-width: 650px;
+            width: 100%;
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+        }
+
+        .mode-btn {
+            padding: 8px 15px;
+            border: 2px solid var(--primary);
+            background: white;
+            color: var(--primary);
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .mode-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .score-board {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--secondary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .progress-bar {
+            width: 100px;
+            height: 10px;
+            background: #eee;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--success);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        h2 { margin: 0 0 20px 0; font-size: 22px; }
+
+        .ten-frames {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .frame {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 5px;
+            border: 2px solid #555;
+            padding: 5px;
+            background: white;
+        }
+
+        .dot {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: transparent;
+            border: 2px dashed #ccc;
+            transition: all 0.3s;
+        }
+
+        .dot.filled { background-color: var(--dot-base); border: 2px solid var(--dot-base); }
+        .dot.action { background-color: var(--dot-action); border: 2px solid var(--dot-action); transform: scale(1.1); }
+        .dot.removed { background-color: #e0e0e0; opacity: 0.3; border: 2px solid #ccc; }
+
+        .math-problem {
+            font-size: 42px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .operator { color: #555; font-weight: bold; }
+
+        .split-container {
+            position: relative;
+            margin-bottom: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .subtrahend-circle {
+            width: 60px;
+            height: 60px;
+            border: 3px solid var(--primary);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 28px;
+            font-weight: bold;
+            background: white;
+            z-index: 2;
+        }
+
+        .branches {
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+            margin-top: 10px;
+            width: 150px;
+            border-top: 3px solid #ccc;
+            position: relative;
+        }
+
+        .branches::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            height: 10px;
+            width: 3px;
+            background: #ccc;
+        }
+
+        .split-inputs {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 10px;
+        }
+
+        .step-input, .main-result {
+            text-align: center;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            font-size: 24px;
+            font-family: inherit;
+        }
+
+        .step-input { width: 50px; height: 50px; }
+        .main-result { width: 70px; height: 60px; font-size: 32px; border-width: 3px; }
+
+        .step-input.correct { border-color: var(--success); background-color: #e8f5e9; }
+        .step-input.wrong { border-color: var(--danger); background-color: #ffebee; }
+
+        .equation-row {
+            font-size: 28px;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .controls { margin-top: 30px; }
+
+        button {
+            padding: 12px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            transition: transform 0.1s, background 0.2s;
+            font-weight: bold;
+        }
+
+        button:active { transform: scale(0.95); }
+
+        .btn-check { background-color: var(--primary); color: white; }
+        .btn-check:hover { background-color: #1976D2; }
+
+        .feedback {
+            margin-top: 15px;
+            font-weight: bold;
+            font-size: 18px;
+            height: 24px;
+        }
+
+        .confetti {
+            position: fixed;
+            top: -10px;
+            width: 10px;
+            height: 10px;
+            z-index: 9999;
+            animation: fall linear forwards;
+        }
+
+        @keyframes fall {
+            to { transform: translateY(105vh) rotate(720deg); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <div class="header">
+        <div class="mode-selector">
+            <button class="mode-btn active" onclick="setMode('add')" id="btnAdd">Addition (+)</button>
+            <button class="mode-btn" onclick="setMode('sub')" id="btnSub">Subtraktion (-)</button>
+        </div>
+        <div class="score-board">
+            <span>Poäng: <span id="scoreText">0</span>/20</span>
+            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        </div>
+    </div>
+
+    <h2 id="instructionText">Addera först till 10</h2>
+    
+    <div class="ten-frames" id="tenFrames"></div>
+
+    <div class="math-problem">
+        <span id="numA"></span> 
+        <span class="operator" id="mainOp">+</span> 
+        <div class="split-container">
+            <div class="subtrahend-circle" id="numB"></div>
+            <div class="branches"></div>
+            <div class="split-inputs">
+                <input type="number" class="step-input" id="inputPart1">
+                <input type="number" class="step-input" id="inputPart2">
+            </div>
+        </div>
+    </div>
+
+    <div class="equation-row">
+        = <span id="eqA"></span> 
+        <span class="operator" id="eqOp1">+</span> <span id="eqPart1">__</span> 
+        <span class="operator" id="eqOp2">+</span> <span id="eqPart2">__</span> = 
+        <input type="number" class="main-result" id="inputResult">
+    </div>
+
+    <div class="feedback" id="feedback"></div>
+
+    <div class="controls">
+        <button class="btn-check" id="checkBtn" onclick="checkAnswer()">Kontrollera</button>
+    </div>
+</div>
+
+<script>
+    let mode = 'add';
+    let score = 0;
+    let currentA, currentB, part1, part2, correctResult;
+
+    function setMode(newMode) {
+        mode = newMode;
+        document.getElementById('btnAdd').className = mode === 'add' ? 'mode-btn active' : 'mode-btn';
+        document.getElementById('btnSub').className = mode === 'sub' ? 'mode-btn active' : 'mode-btn';
+        
+        document.getElementById('mainOp').innerText = mode === 'add' ? '+' : '-';
+        document.getElementById('eqOp1').innerText = mode === 'add' ? '+' : '-';
+        document.getElementById('eqOp2').innerText = mode === 'add' ? '+' : '-';
+        document.getElementById('instructionText').innerText = mode === 'add' ? 'Addera först till 10' : 'Subtrahera först till 10';
+        
+        initGame();
+    }
+
+    function initGame() {
+        if (mode === 'add') {
+            currentA = Math.floor(Math.random() * 8) + 2;
+            currentB = Math.floor(Math.random() * 8) + 2;
+            if (currentA + currentB <= 10) currentB = 11 - currentA + Math.floor(Math.random() * 5);
+            if (currentB > 9) currentB = 9;
+
+            part1 = 10 - currentA;
+            part2 = currentB - part1;
+            correctResult = currentA + currentB;
+        } else {
+            currentA = Math.floor(Math.random() * 8) + 11;
+            currentB = Math.floor(Math.random() * 8) + 2;
+            if (currentA - currentB >= 10) currentB = (currentA - 10) + 1 + Math.floor(Math.random() * 3);
+            if (currentB > 9) currentB = 9;
+
+            part1 = currentA - 10;
+            part2 = currentB - part1;
+            correctResult = currentA - currentB;
+        }
+
+        document.getElementById('numA').innerText = currentA;
+        document.getElementById('numB').innerText = currentB;
+        document.getElementById('eqA').innerText = currentA;
+        
+        const inputs = ['inputPart1', 'inputPart2', 'inputResult'];
+        inputs.forEach(id => {
+            const el = document.getElementById(id);
+            el.value = '';
+            el.className = id === 'inputResult' ? 'main-result' : 'step-input';
+            el.disabled = false;
+            el.style.borderColor = '#ccc';
+        });
+        
+        document.getElementById('eqPart1').innerText = '__';
+        document.getElementById('eqPart2').innerText = '__';
+        document.getElementById('feedback').innerText = '';
+        document.getElementById('checkBtn').style.display = 'inline-block';
+
+        updateVisuals();
+    }
+
+    function updateVisuals() {
+        const val1 = parseInt(document.getElementById('inputPart1').value) || 0;
+        const val2 = parseInt(document.getElementById('inputPart2').value) || 0;
+        
+        document.getElementById('eqPart1').innerText = val1 || '__';
+        document.getElementById('eqPart2').innerText = val2 || '__';
+
+        const container = document.getElementById('tenFrames');
+        container.innerHTML = '';
+
+        const frame1 = document.createElement('div'); frame1.className = 'frame';
+        const frame2 = document.createElement('div'); frame2.className = 'frame';
+
+        let dots = [];
+        for(let i=0; i<20; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'dot';
+            dots.push(dot);
+            if(i < 10) frame1.appendChild(dot);
+            else frame2.appendChild(dot);
+        }
+
+        if (mode === 'add') {
+            for(let i=0; i<currentA; i++) dots[i].classList.add('filled');
+            for(let i=0; i<Math.min(val1, 10-currentA); i++) {
+                if (currentA + i < 20) dots[currentA + i].classList.add('action');
+            }
+            for(let i=0; i<val2; i++) {
+                if(10 + i < 20) dots[10 + i].classList.add('action');
+            }
+        } else {
+            for(let i=0; i<currentA; i++) dots[i].classList.add('filled');
+            let removeCount = 0;
+            for(let i=0; i<val1; i++) {
+                let idx = currentA - 1 - removeCount;
+                if(idx >= 0 && idx >= 10) { dots[idx].className = 'dot removed'; removeCount++; }
+            }
+            for(let i=0; i<val2; i++) {
+                let idx = currentA - 1 - removeCount;
+                if(idx >= 0 && idx < 10) { dots[idx].className = 'dot removed'; removeCount++; }
+            }
+        }
+
+        container.appendChild(frame1);
+        container.appendChild(frame2);
+    }
+
+    document.getElementById('inputPart1').addEventListener('input', updateVisuals);
+    document.getElementById('inputPart2').addEventListener('input', updateVisuals);
+
+    function checkAnswer() {
+        const val1 = parseInt(document.getElementById('inputPart1').value);
+        const val2 = parseInt(document.getElementById('inputPart2').value);
+        const res = parseInt(document.getElementById('inputResult').value);
+
+        let isCorrect = true;
+
+        if (val1 !== part1) {
+            document.getElementById('inputPart1').className = 'step-input wrong';
+            isCorrect = false;
+        } else {
+            document.getElementById('inputPart1').className = 'step-input correct';
+        }
+
+        if (val2 !== part2) {
+            document.getElementById('inputPart2').className = 'step-input wrong';
+            isCorrect = false;
+        } else {
+            document.getElementById('inputPart2').className = 'step-input correct';
+        }
+
+        if (res !== correctResult) {
+            document.getElementById('inputResult').style.borderColor = '#f44336';
+            isCorrect = false;
+        } else {
+            document.getElementById('inputResult').style.borderColor = '#4CAF50';
+        }
+
+        const fb = document.getElementById('feedback');
+        if (isCorrect) {
+            fb.innerText = 'Rätt svar! Snyggt jobbat!';
+            fb.style.color = '#4CAF50';
+            document.getElementById('checkBtn').style.display = 'none';
+            
+            document.getElementById('inputPart1').disabled = true;
+            document.getElementById('inputPart2').disabled = true;
+            document.getElementById('inputResult').disabled = true;
+
+            score++;
+            document.getElementById('scoreText').innerText = score;
+            document.getElementById('progressFill').style.width = (score / 20 * 100) + '%';
+
+            if (score >= 20) {
+                fb.innerText = 'GRATTIS! Du klarade 20 poäng!';
+                shootConfetti();
+                score = 0;
+                setTimeout(() => {
+                    document.getElementById('scoreText').innerText = score;
+                    document.getElementById('progressFill').style.width = '0%';
+                    initGame();
+                }, 6000);
+            } else {
+                setTimeout(initGame, 2000);
+            }
+        } else {
+            fb.innerText = 'Något blev fel, titta på prickarna och försök igen.';
+            fb.style.color = '#f44336';
+        }
+    }
+
+    function shootConfetti() {
+        const colors = ['#f44336', '#e91e63', '#9c27b0', '#2196f3', '#4CAF50', '#FFEB3B', '#FF9800'];
+        for (let i = 0; i < 150; i++) {
+            let conf = document.createElement('div');
+            conf.className = 'confetti';
+            conf.style.left = Math.random() * 100 + 'vw';
+            conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            conf.style.animationDuration = (Math.random() * 3 + 2) + 's';
+            conf.style.transform = `rotate(${Math.random() * 360}deg)`;
+            document.body.appendChild(conf);
+            setTimeout(() => conf.remove(), 6000);
+        }
+    }
+
+    initGame();
+</script>
+
+</body>
+</html>
