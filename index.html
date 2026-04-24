@@ -302,7 +302,7 @@
 
     function setMode(newMode) {
         if (mode !== newMode) {
-            score = 0; // Nollställ poängen vid byte av räknesätt
+            score = 0;
             document.getElementById('scoreText').innerText = score;
             document.getElementById('progressFill').style.width = '0%';
         }
@@ -315,7 +315,6 @@
         document.getElementById('eqOp1').innerText = mode === 'add' ? '+' : '-';
         document.getElementById('eqOp2').innerText = mode === 'add' ? '+' : '-';
         
-        // Nya förfinade instruktioner
         document.getElementById('instructionText').innerText = mode === 'add' ? 
             'Addera först till 10, addera sedan resten.' : 
             'Subtrahera först till 10, subtrahera sedan resten.';
@@ -326,12 +325,9 @@
     function initGame() {
         let attempts = 0;
         
-        // Skapa en ny uppgift och säkerställ att den inte är samma som den förra
         do {
             if (mode === 'add') {
-                // A mellan 2 och 9
                 currentA = Math.floor(Math.random() * 8) + 2;
-                // B måste vara tillräckligt stor för att A + B > 10
                 let minB = 11 - currentA;
                 currentB = Math.floor(Math.random() * (9 - minB + 1)) + minB;
 
@@ -339,9 +335,7 @@
                 part2 = currentB - part1;
                 correctResult = currentA + currentB;
             } else {
-                // A mellan 11 och 18
                 currentA = Math.floor(Math.random() * 8) + 11;
-                // B måste vara tillräckligt stor för att A - B < 10
                 let minB = currentA - 9;
                 currentB = Math.floor(Math.random() * (9 - minB + 1)) + minB;
 
@@ -374,6 +368,9 @@
         document.getElementById('checkBtn').style.display = 'inline-block';
 
         updateVisuals();
+        
+        // Sätt fokus i första inmatningsfältet automatiskt när en ny uppgift laddas
+        document.getElementById('inputPart1').focus();
     }
 
     function updateVisuals() {
@@ -423,8 +420,33 @@
         container.appendChild(frame2);
     }
 
+    // Uppdatera visning vid inmatning
     document.getElementById('inputPart1').addEventListener('input', updateVisuals);
     document.getElementById('inputPart2').addEventListener('input', updateVisuals);
+
+    // Hantera Enter-tryckningar
+    document.getElementById('inputPart1').addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            document.getElementById('inputPart2').focus();
+        }
+    });
+
+    document.getElementById('inputPart2').addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            document.getElementById('inputResult').focus();
+        }
+    });
+
+    document.getElementById('inputResult').addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            if (!this.disabled) {
+                checkAnswer();
+            }
+        }
+    });
 
     function checkAnswer() {
         const val1 = parseInt(document.getElementById('inputPart1').value);
