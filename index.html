@@ -263,7 +263,7 @@
         </div>
     </div>
 
-    <h2 id="instructionText">Addera först till 10, sedan resten</h2>
+    <h2 id="instructionText">Addera först till 10, addera sedan resten.</h2>
     
     <div class="ten-frames" id="tenFrames"></div>
 
@@ -298,8 +298,15 @@
     let mode = 'add';
     let score = 0;
     let currentA, currentB, part1, part2, correctResult;
+    let lastA = 0, lastB = 0;
 
     function setMode(newMode) {
+        if (mode !== newMode) {
+            score = 0; // Nollställ poängen vid byte av räknesätt
+            document.getElementById('scoreText').innerText = score;
+            document.getElementById('progressFill').style.width = '0%';
+        }
+        
         mode = newMode;
         document.getElementById('btnAdd').className = mode === 'add' ? 'mode-btn active' : 'mode-btn';
         document.getElementById('btnSub').className = mode === 'sub' ? 'mode-btn active' : 'mode-btn';
@@ -307,31 +314,46 @@
         document.getElementById('mainOp').innerText = mode === 'add' ? '+' : '-';
         document.getElementById('eqOp1').innerText = mode === 'add' ? '+' : '-';
         document.getElementById('eqOp2').innerText = mode === 'add' ? '+' : '-';
-        document.getElementById('instructionText').innerText = mode === 'add' ? 'Addera först till 10' : 'Subtrahera först till 10';
+        
+        // Nya förfinade instruktioner
+        document.getElementById('instructionText').innerText = mode === 'add' ? 
+            'Addera först till 10, addera sedan resten.' : 
+            'Subtrahera först till 10, subtrahera sedan resten.';
         
         initGame();
     }
 
     function initGame() {
-        if (mode === 'add') {
-            currentA = Math.floor(Math.random() * 8) + 2;
-            currentB = Math.floor(Math.random() * 8) + 2;
-            if (currentA + currentB <= 10) currentB = 11 - currentA + Math.floor(Math.random() * 5);
-            if (currentB > 9) currentB = 9;
+        let attempts = 0;
+        
+        // Skapa en ny uppgift och säkerställ att den inte är samma som den förra
+        do {
+            if (mode === 'add') {
+                // A mellan 2 och 9
+                currentA = Math.floor(Math.random() * 8) + 2;
+                // B måste vara tillräckligt stor för att A + B > 10
+                let minB = 11 - currentA;
+                currentB = Math.floor(Math.random() * (9 - minB + 1)) + minB;
 
-            part1 = 10 - currentA;
-            part2 = currentB - part1;
-            correctResult = currentA + currentB;
-        } else {
-            currentA = Math.floor(Math.random() * 8) + 11;
-            currentB = Math.floor(Math.random() * 8) + 2;
-            if (currentA - currentB >= 10) currentB = (currentA - 10) + 1 + Math.floor(Math.random() * 3);
-            if (currentB > 9) currentB = 9;
+                part1 = 10 - currentA;
+                part2 = currentB - part1;
+                correctResult = currentA + currentB;
+            } else {
+                // A mellan 11 och 18
+                currentA = Math.floor(Math.random() * 8) + 11;
+                // B måste vara tillräckligt stor för att A - B < 10
+                let minB = currentA - 9;
+                currentB = Math.floor(Math.random() * (9 - minB + 1)) + minB;
 
-            part1 = currentA - 10;
-            part2 = currentB - part1;
-            correctResult = currentA - currentB;
-        }
+                part1 = currentA - 10;
+                part2 = currentB - part1;
+                correctResult = currentA - currentB;
+            }
+            attempts++;
+        } while (currentA === lastA && currentB === lastB && attempts < 10);
+
+        lastA = currentA;
+        lastB = currentB;
 
         document.getElementById('numA').innerText = currentA;
         document.getElementById('numB').innerText = currentB;
